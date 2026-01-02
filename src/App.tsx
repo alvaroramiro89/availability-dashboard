@@ -12,10 +12,11 @@ function App() {
   const {
     pendingChanges,
     lastUpdated,
+    rateLimitError,
     toggleAvailability,
     getAvailabilityState,
     saveAllChanges,
-  } = useAvailability();
+  } = useAvailability({ selectedMemberName: selectedMember?.name || null });
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [pendingMemberIndex, setPendingMemberIndex] = useState<number | null>(null);
@@ -31,9 +32,9 @@ function App() {
 
   const handleVerifyPassword = (password: string): boolean => {
     if (pendingMemberIndex === null) return false;
-    const member = TEAM_MEMBERS[pendingMemberIndex];
-    if (password === member.password) {
-      login(pendingMemberIndex);
+    // Autenticación dummy: cualquier contraseña funciona
+    if (password.trim() !== '') {
+      login(pendingMemberIndex, password);
       setShowPasswordModal(false);
       setPendingMemberIndex(null);
       return true;
@@ -55,9 +56,12 @@ function App() {
         // Opcional: puedes agregar un toast o mensaje aquí
         console.log('Cambios guardados:', result.message);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving:', error);
-      // Opcional: mostrar mensaje de error al usuario
+      // El error de rate limit ya está en rateLimitError del hook
+      if (error?.message && error.message.includes('Límite alcanzado')) {
+        // El mensaje ya está en rateLimitError, no necesitamos hacer nada más
+      }
     } finally {
       setIsSaving(false);
     }
@@ -133,6 +137,18 @@ function App() {
         onSave={handleSave}
         isSaving={isSaving}
       />
+
+      {/* Rate Limit Error Message */}
+      {rateLimitError && (
+        <div className="bg-red-50 border-2 border-red-500 rounded-xl p-4 mb-6">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <p className="text-red-700 font-medium">{rateLimitError}</p>
+          </div>
+        </div>
+      )}
 
       {/* Calendar */}
       <Calendar

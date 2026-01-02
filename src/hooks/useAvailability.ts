@@ -1,12 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAvailability, saveAvailabilityBatch } from '../utils/api';
+import { canMakeUpdate, recordUpdate, RATE_LIMIT_COUNT } from '../utils/rateLimit';
 import type { AvailabilityData, PendingChange } from '../types';
 
-export function useAvailability() {
+interface UseAvailabilityOptions {
+  selectedMemberName?: string | null;
+}
+
+export function useAvailability(options?: UseAvailabilityOptions) {
   const [availabilityData, setAvailabilityData] = useState<AvailabilityData>({});
   const [pendingChanges, setPendingChanges] = useState<Map<string, boolean>>(new Map());
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [rateLimitError, setRateLimitError] = useState<string | null>(null);
   
   // Use refs to access current values in callbacks
   const availabilityDataRef = useRef(availabilityData);
@@ -92,6 +98,18 @@ export function useAvailability() {
       return { success: true, message: 'No hay cambios para guardar', updatedCount: 0 };
     }
 
+    // Verificar rate limiting
+    const memberName = options?.selectedMemberName;
+    if (memberName) {
+      const rateLimit = canMakeUpdate(memberName);
+      if (!rateLimit.allowed) {
+        const errorMessage = `Límite alcanzado: Solo puedes hacer ${RATE_LIMIT_COUNT} updates cada 15 minutos. Intenta nuevamente en ${rateLimit.resetIn} minuto${rateLimit.resetIn > 1 ? 's' : ''}.`;
+        setRateLimitError(errorMessage);
+        throw new Error(errorMessage);
+      }
+      setRateLimitError(null);
+    }
+
     const changes: PendingChange[] = Array.from(pendingChanges.entries()).map(
       ([key, available]) => {
         const [date, member, slot] = key.split('|');
@@ -101,6 +119,12 @@ export function useAvailability() {
 
     try {
       const result = await saveAvailabilityBatch(changes);
+      
+      // Registrar el update para rate limiting
+      if (memberName) {
+        recordUpdate(memberName);
+      }
+      
       setPendingChanges(new Map());
       const now = new Date();
       setLastUpdated(now);
@@ -118,6 +142,7 @@ export function useAvailability() {
     pendingChanges,
     lastUpdated,
     isLoading,
+    rateLimitError,
     toggleAvailability,
     getAvailabilityState,
     saveAllChanges,
