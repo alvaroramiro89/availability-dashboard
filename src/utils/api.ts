@@ -15,7 +15,7 @@ export async function getAvailability(): Promise<AvailabilityData> {
 export async function saveAvailabilityBatch(
   changes: PendingChange[]
 ): Promise<ApiResponse> {
-  const response = await fetch(`${API_URL}/api/availability/batch`, {
+  const response = await fetch(`${API_URL}/api/availability-batch`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ changes }),
