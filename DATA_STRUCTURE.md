@@ -1,8 +1,8 @@
-# 📊 Estructura de Datos y Persistencia
+# Data Structure and Persistence
 
-## 🗂️ Estructura del JSON
+## 🗂️ JSON Structure
 
-El JSON guarda **toda la disponibilidad del año 2026** en una estructura anidada de 3 niveles:
+The JSON stores **all availability data for year 2026** in a nested 3-level structure:
 
 ```json
 {
@@ -30,22 +30,24 @@ El JSON guarda **toda la disponibilidad del año 2026** en una estructura anidad
 }
 ```
 
-### Niveles de la estructura:
+### Structure Levels:
 
-1. **Nivel 1: Fecha** (clave: `"YYYY-MM-DD"`)
-   - Ejemplo: `"2026-01-15"`
-   - Una entrada por cada día del año 2026 (366 días)
+1. **Level 1: Date** (key: `"YYYY-MM-DD"`)
 
-2. **Nivel 2: Miembro del equipo** (clave: nombre del miembro)
+   - Example: `"2026-01-15"`
+   - One entry for each day of year 2026 (366 days)
+
+2. **Level 2: Team Member** (key: member name)
+
    - `"Alvaro"`, `"Pablo"`, `"Diego"`, `"Bruno"`
-   - Una entrada por cada miembro del equipo
+   - One entry for each team member
 
-3. **Nivel 3: Slot de tiempo** (clave: rango de horas)
-   - Ejemplo: `"0-1"`, `"5-6"`, `"23-0"`
-   - 24 slots por día (0-23 horas)
-   - Valor: `true` (verde/disponible) o `false` (rojo/no disponible)
+3. **Level 3: Time Slot** (key: hour range)
+   - Example: `"0-1"`, `"5-6"`, `"23-0"`
+   - 24 slots per day (0-23 hours)
+   - Value: `true` (green/available) or `false` (red/not available)
 
-### Ejemplo completo de un día:
+### Complete Day Example:
 
 ```json
 {
@@ -87,139 +89,149 @@ El JSON guarda **toda la disponibilidad del año 2026** en una estructura anidad
 }
 ```
 
-### Tamaño estimado del JSON:
+### Estimated JSON Size:
 
-- **366 días** × **4 miembros** × **24 slots** = **35,136 valores booleanos**
-- Cada valor: `true` o `false` (5-6 caracteres con formato JSON)
-- **Tamaño aproximado**: ~500KB - 1MB (con indentación)
+- **366 days** × **4 members** × **24 slots** = **35,136 boolean values**
+- Each value: `true` or `false` (5-6 characters with JSON formatting)
+- **Approximate size**: ~500KB - 1MB (with indentation)
 
 ---
 
-## 🔗 ¿Qué es GitHub Gist?
+## 🔗 What is GitHub Gist?
 
-**GitHub Gist** es un servicio gratuito de GitHub para compartir y guardar fragmentos de código o texto.
+**GitHub Gist** is a free GitHub service for sharing and storing code snippets or text files.
 
-### Características relevantes para nuestro proyecto:
+### Relevant Features for Our Project:
 
-1. **Gratis y sin límites** (para uso razonable)
-2. **API REST pública** para leer/escribir
-3. **Versionado automático** (historial de cambios)
-4. **Almacenamiento persistente** (no se borra)
-5. **Acceso mediante token** (autenticación)
+1. **Free and unlimited** (for reasonable use)
+2. **Public REST API** for reading/writing
+3. **Automatic versioning** (change history)
+4. **Persistent storage** (doesn't get deleted)
+5. **Token-based access** (authentication)
 
-### Un Gist es como un "archivo en la nube":
+### A Gist is like a "file in the cloud":
 
 ```
 Gist ID: abc123def456
-  └── availability.json (nuestro archivo JSON completo)
+  └── availability.json (our complete JSON file)
 ```
 
-### Límites de GitHub Gist:
+### GitHub Gist Limits:
 
-- **Tamaño máximo por archivo**: 1MB (suficiente para nuestro JSON)
-- **Límite de requests**: 5,000 por hora (más que suficiente)
-- **Sin costo**: 100% gratis
+- **Maximum file size**: 1MB (sufficient for our JSON)
+- **Request limit**: 5,000 per hour (more than enough)
+- **Cost**: 100% free
 
 ---
 
-## 💾 Cómo guardamos el JSON en Gist
+## 💾 How We Store JSON in Gist
 
-### Flujo actual (local):
-
-```
-Frontend → API Server → data-local.json (archivo en disco)
-```
-
-### Flujo con Gist (producción):
+### Current Flow (Production):
 
 ```
-Frontend → Vercel Serverless Function → GitHub Gist API → Gist (nube)
+Frontend → Vercel Serverless Function → GitHub Gist API → Gist (cloud)
 ```
 
-### Proceso paso a paso:
+### Local Development Flow:
 
-#### 1. **Lectura (GET /api/availability)**
+```
+Frontend → Local Express Server → data-local.json (local file)
+```
+
+### Step-by-Step Process:
+
+#### 1. **Reading (GET /api/availability)**
 
 ```typescript
-// 1. Llamar a GitHub Gist API
+// 1. Call GitHub Gist API
 const gist = await octokit.gists.get({ gist_id: GIST_ID });
 
-// 2. Extraer el contenido del archivo JSON
-const content = gist.data.files['availability.json']?.content;
+// 2. Extract JSON file content
+const content = gist.data.files["availability.json"]?.content;
 
-// 3. Parsear JSON
+// 3. Parse JSON
 const availabilityData = JSON.parse(content);
 
-// 4. Inicializar datos faltantes (si es primera vez)
-// 5. Retornar al frontend
+// 4. Initialize missing data (if first time)
+// 5. Return to frontend
 ```
 
-#### 2. **Escritura (POST /api/availability/batch)**
+#### 2. **Writing (POST /api/availability-batch)**
 
 ```typescript
-// 1. Leer Gist actual
+// 1. Read current Gist
 const gist = await octokit.gists.get({ gist_id: GIST_ID });
 
-// 2. Parsear JSON existente
-let availabilityData = JSON.parse(gist.data.files['availability.json'].content);
+// 2. Parse existing JSON
+let availabilityData = JSON.parse(gist.data.files["availability.json"].content);
 
-// 3. Aplicar cambios del batch
-changes.forEach(change => {
+// 3. Apply batch changes
+changes.forEach((change) => {
   availabilityData[change.date][change.member][change.slot] = change.available;
 });
 
-// 4. Actualizar Gist con nuevo JSON
+// 4. Update Gist with new JSON
 await octokit.gists.update({
   gist_id: GIST_ID,
   files: {
-    'availability.json': {
-      content: JSON.stringify(availabilityData, null, 2)
-    }
-  }
+    "availability.json": {
+      content: JSON.stringify(availabilityData, null, 2),
+    },
+  },
 });
 ```
 
-### Unidad mínima de data:
+### Minimum Data Unit:
 
-**✅ SÍ, el JSON completo es la unidad mínima**
+**✅ YES, the complete JSON is the minimum unit**
 
-- **No guardamos cambios individuales** (no es eficiente)
-- **Guardamos el JSON completo** cada vez que hay cambios
-- **GitHub Gist maneja el versionado** automáticamente
+- **We don't save individual changes** (not efficient)
+- **We save the complete JSON** every time there are changes
+- **GitHub Gist handles versioning** automatically
 
-### ¿Por qué guardar el JSON completo?
+### Why Save the Complete JSON?
 
-1. **Simplicidad**: Un solo archivo, fácil de leer/escribir
-2. **Consistencia**: Siempre tenemos el estado completo
-3. **Versionado**: Gist guarda historial automáticamente
-4. **Tamaño manejable**: ~1MB es pequeño para APIs modernas
+1. **Simplicity**: Single file, easy to read/write
+2. **Consistency**: We always have the complete state
+3. **Versioning**: Gist automatically saves history
+4. **Manageable Size**: ~1MB is small for modern APIs
 
-### Alternativa (más compleja):
+### Alternative (More Complex):
 
-Si el JSON creciera mucho, podríamos:
-- Dividir por meses (12 archivos)
-- Dividir por miembros (4 archivos)
-- Usar una base de datos real
+If the JSON grew too large, we could:
 
-**Pero para nuestro caso (4 personas, 1 año): el JSON completo es perfecto.**
+- Split by months (12 files)
+- Split by members (4 files)
+- Use a real database
+
+**But for our case (4 people, 1 year): the complete JSON is perfect.**
 
 ---
 
-## 🔐 Autenticación con Gist
+## 🔐 Gist Authentication
 
-### Token de GitHub:
+### GitHub Token:
 
-1. Crear un **Personal Access Token** en GitHub
-2. Permisos necesarios: `gist` (crear/editar gists)
-3. Guardar como variable de entorno: `GITHUB_TOKEN`
+1. Create a **Personal Access Token** on GitHub
+2. Required permissions: `gist` (create/edit gists)
+3. Save as environment variable: `GITHUB_TOKEN`
 
 ### Gist ID:
 
-1. Crear un Gist inicial (manual o automático)
-2. Guardar el ID del Gist
-3. Guardar como variable de entorno: `GIST_ID`
+1. Create an initial Gist (manually or automatically)
+2. Save the Gist ID
+3. Save as environment variable: `GIST_ID`
 
-### Variables de entorno en Vercel:
+### Environment Variables in Vercel:
+
+```
+GITHUB_TOKEN = ghp_xxxxxxxxxxxxx
+GIST_ID = abc123def456789
+```
+
+### Environment Variables for Local Development:
+
+Create `.env.local` file:
 
 ```
 GITHUB_TOKEN = ghp_xxxxxxxxxxxxx
@@ -228,24 +240,111 @@ GIST_ID = abc123def456789
 
 ---
 
-## 📈 Ventajas de usar Gist vs Base de Datos
+## 📈 Advantages of Using Gist vs Database
 
-| Aspecto | Gist | Base de Datos |
-|---------|------|---------------|
-| **Costo** | ✅ Gratis | ❌ Puede costar |
-| **Setup** | ✅ 2 minutos | ❌ Configuración compleja |
-| **Límites** | ✅ 1MB/archivo | ✅ Ilimitado |
-| **Versionado** | ✅ Automático | ❌ Manual |
-| **Backup** | ✅ Automático | ❌ Manual |
-| **Para MVP** | ✅ Perfecto | ⚠️ Overkill |
+| Aspect         | Gist         | Database                 |
+| -------------- | ------------ | ------------------------ |
+| **Cost**       | ✅ Free      | ❌ May cost              |
+| **Setup**      | ✅ 2 minutes | ❌ Complex configuration |
+| **Limits**     | ✅ 1MB/file  | ✅ Unlimited             |
+| **Versioning** | ✅ Automatic | ❌ Manual                |
+| **Backup**     | ✅ Automatic | ❌ Manual                |
+| **For MVP**    | ✅ Perfect   | ⚠️ Overkill              |
 
 ---
 
-## 🎯 Resumen
+## 🔄 Gist Revisions
 
-1. **JSON**: Estructura anidada `fecha → miembro → slot → boolean`
-2. **Gist**: Servicio gratuito de GitHub para guardar archivos en la nube
-3. **Unidad mínima**: El JSON completo (no cambios individuales)
-4. **Ventaja**: Simple, gratis, versionado automático
-5. **Perfecto para**: MVP de 4 personas, 1 año de datos
+### How Revisions Work:
 
+- **Each `gists.update()` call creates a new revision**
+- **GET requests don't create revisions** (only if initialization occurs)
+- **POST requests create revisions** when data is actually updated
+- **GitHub Gist automatically maintains revision history**
+
+### Revision History:
+
+- Accessible via GitHub Gist web interface
+- Shows all changes over time
+- Can view diffs between revisions
+- Can restore previous versions (manually)
+
+### Revision Considerations:
+
+- **Advantage**: Complete change history
+- **Consideration**: Many updates = many revisions
+- **Current behavior**: Only creates revisions when data changes
+
+---
+
+## 🎯 Summary
+
+1. **JSON**: Nested structure `date → member → slot → boolean`
+2. **Gist**: Free GitHub service for storing files in the cloud
+3. **Minimum Unit**: Complete JSON (not individual changes)
+4. **Advantage**: Simple, free, automatic versioning
+5. **Perfect for**: MVP with 4 people, 1 year of data
+6. **Revisions**: Each update creates a new Gist revision (automatic history)
+
+---
+
+## 📊 Data Flow Diagram
+
+```
+┌─────────────┐
+│   Frontend  │
+│  (React)    │
+└──────┬──────┘
+       │
+       │ GET /api/availability
+       │ POST /api/availability-batch
+       ▼
+┌─────────────────────┐
+│ Vercel Serverless   │
+│ Function            │
+└──────┬──────────────┘
+       │
+       │ @octokit/rest
+       ▼
+┌─────────────────────┐
+│  GitHub Gist API    │
+└──────┬──────────────┘
+       │
+       │ Read/Write
+       ▼
+┌─────────────────────┐
+│  GitHub Gist        │
+│  availability.json  │
+│  (Cloud Storage)    │
+└─────────────────────┘
+```
+
+---
+
+## 🔧 Technical Details
+
+### Gist API Operations:
+
+1. **Read**: `octokit.gists.get({ gist_id })`
+
+   - Returns Gist metadata and file contents
+   - File content is base64 encoded (automatically decoded by Octokit)
+
+2. **Update**: `octokit.gists.update({ gist_id, files })`
+   - Updates entire Gist
+   - Creates new revision
+   - Returns updated Gist data
+
+### Error Handling:
+
+- **Missing Gist**: Returns empty object, initializes on first write
+- **Invalid Token**: Returns 401 Unauthorized
+- **Rate Limit**: GitHub API rate limits apply (5,000 requests/hour)
+- **Network Errors**: Retry logic can be added
+
+### Performance Considerations:
+
+- **Read Time**: ~200-500ms (network + processing)
+- **Write Time**: ~300-800ms (read + update + write)
+- **Concurrency**: Multiple simultaneous updates may cause conflicts
+- **Optimization**: Batch updates reduce API calls
