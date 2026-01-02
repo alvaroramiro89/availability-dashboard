@@ -87,7 +87,10 @@ export function useAvailability() {
   }, []);
 
   const saveAllChanges = async () => {
-    if (pendingChanges.size === 0) return;
+    // Si no hay cambios pendientes, simplemente retornar sin error
+    if (pendingChanges.size === 0) {
+      return { success: true, message: 'No hay cambios para guardar', updatedCount: 0 };
+    }
 
     const changes: PendingChange[] = Array.from(pendingChanges.entries()).map(
       ([key, available]) => {

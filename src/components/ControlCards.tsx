@@ -109,7 +109,7 @@ export function ControlCards({
         <div className="space-y-3">
           <button
             onClick={onSave}
-            disabled={pendingChangesCount === 0 || isSaving}
+            disabled={isSaving}
             className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-sm"
           >
             {isSaving ? 'Guardando...' : `UPDATE${pendingChangesCount > 0 ? ` (${pendingChangesCount})` : ''}`}

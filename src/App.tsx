@@ -49,9 +49,15 @@ function App() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await saveAllChanges();
+      const result = await saveAllChanges();
+      // Mostrar mensaje de éxito solo si hubo cambios guardados
+      if (result && result.updatedCount && result.updatedCount > 0) {
+        // Opcional: puedes agregar un toast o mensaje aquí
+        console.log('Cambios guardados:', result.message);
+      }
     } catch (error) {
       console.error('Error saving:', error);
+      // Opcional: mostrar mensaje de error al usuario
     } finally {
       setIsSaving(false);
     }
