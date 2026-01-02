@@ -1,78 +1,66 @@
-# Dashboard de Disponibilidad - Beefive / Kioscoin
+# Dashboard de Disponibilidad - React + TypeScript
 
-Sistema simple para gestionar la disponibilidad del equipo y coordinar reuniones.
+Sistema de disponibilidad del equipo construido con React, TypeScript y Vite.
 
-## Estructura
+## Stack Tecnológico
 
-- `dashboard.html` - Frontend (interfaz web)
-- `server/` - Backend API (Node.js/Express)
-  - `server.js` - API principal
-  - `data/availability.json` - Almacenamiento (se crea automáticamente)
-
-## Setup
-
-### 1. Instalar dependencias del servidor
-
-```bash
-cd server
-npm install
-```
-
-### 2. Iniciar el servidor
-
-```bash
-npm run dev
-```
-
-El servidor estará corriendo en `http://localhost:3000`
-
-### 3. Abrir el dashboard
-
-Abre `dashboard.html` en tu navegador (puedes usar un servidor local o abrirlo directamente).
-
-## API Endpoints
-
-### GET `/api/availability`
-Obtiene la disponibilidad del mes actual y el siguiente.
-
-**Respuesta:**
-```json
-{
-  "2024-10-01": {
-    "Alvaro": { "0-1": true, "1-2": false, ... },
-    "Pablo": { "0-1": true, "1-2": true, ... },
-    ...
-  }
-}
-```
-
-### POST `/api/availability`
-Actualiza la disponibilidad de un slot específico.
-
-**Body:**
-```json
-{
-  "date": "2024-10-15",
-  "member": "Alvaro",
-  "slot": "9-10",
-  "available": true
-}
-```
-
-### GET `/api/health`
-Health check del servidor.
+- **Frontend**: React 18 + TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS
+- **Backend**: Vercel Serverless Functions
+- **Storage**: GitHub Gist API (gratis, sin límites)
 
 ## Características
 
-- 24 bloques de horas diarias (0-23)
-- 4 miembros del equipo: Alvaro, Pablo, Diego, Bruno
-- Vista individual o de todos los miembros
-- Persistencia en archivo JSON
-- Sincronización en tiempo real entre usuarios
+- ✅ Autenticación con contraseñas por miembro
+- ✅ Calendario completo del año 2026
+- ✅ 24 bloques de horas diarias
+- ✅ Batch updates (cambios pendientes + botón UPDATE)
+- ✅ Vista individual o de todos los miembros
+- ✅ Persistencia en GitHub Gist
+- ✅ 100% gratis en Vercel
+
+## Desarrollo Local
+
+```bash
+# Instalar dependencias
+npm install
+
+# Iniciar servidor de desarrollo
+npm run dev
+
+# Build para producción
+npm run build
+
+# Preview del build
+npm run preview
+```
+
+## Estructura del Proyecto
+
+```
+/
+├── src/
+│   ├── components/      # Componentes React
+│   ├── hooks/           # Custom hooks
+│   ├── types/           # TypeScript types
+│   ├── utils/           # Utilidades
+│   ├── App.tsx          # Componente principal
+│   └── main.tsx         # Entry point
+├── api/                  # Vercel Serverless Functions
+│   ├── availability.ts
+│   └── availability-batch.ts
+└── public/              # Assets estáticos
+```
+
+## Próximos Pasos
+
+1. Implementar GitHub Gist API en las Serverless Functions
+2. Configurar variables de entorno
+3. Deploy en Vercel
 
 ## Notas
 
-- El archivo `availability.json` se crea automáticamente
-- Los datos se inicializan con `true` (disponible) por defecto
-- El servidor debe estar corriendo para que el dashboard funcione
-
+- Las Serverless Functions están preparadas pero necesitan implementación de GitHub Gist
+- El frontend funciona completamente en modo desarrollo
+- Para producción, configurar `GITHUB_TOKEN` en Vercel
