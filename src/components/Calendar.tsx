@@ -8,6 +8,7 @@ interface CalendarProps {
   viewAllMembers: boolean;
   getAvailabilityState: (dateKey: string, memberName: string, slot: string) => boolean;
   onToggleAvailability: (dateKey: string, memberName: string, slot: string) => void;
+  isMobile?: boolean;
 }
 
 export function Calendar({
@@ -16,6 +17,7 @@ export function Calendar({
   viewAllMembers,
   getAvailabilityState,
   onToggleAvailability,
+  isMobile = false,
 }: CalendarProps) {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -35,17 +37,17 @@ export function Calendar({
   const membersToShow = viewAllMembers ? TEAM_MEMBERS : selectedMember ? [selectedMember] : [];
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-4 mb-6 overflow-x-auto">
-      <div className="grid grid-cols-7 gap-2 min-w-max">
+    <div className="bg-white rounded-xl shadow-lg p-2 md:p-4 mb-6 overflow-x-auto border-2 border-beefive-green">
+      <div className={`grid gap-2 min-w-max ${isMobile ? 'grid-cols-1' : 'grid-cols-7'}`}>
         {/* Day headers */}
         {DAYS.map((day) => (
-          <div key={day} className="font-semibold text-gray-700 text-center py-2">
+          <div key={day} className="font-black text-beefive-green text-center py-2">
             {day}
           </div>
         ))}
 
-        {/* Empty cells for days before month starts */}
-        {Array.from({ length: startingDayOfWeek }).map((_, i) => (
+        {/* Empty cells for days before month starts - only on desktop */}
+        {!isMobile && Array.from({ length: startingDayOfWeek }).map((_, i) => (
           <div key={`empty-${i}`} className="min-h-[350px]"></div>
         ))}
 
@@ -58,10 +60,10 @@ export function Calendar({
           return (
             <div
               key={dateKey}
-              className="border border-gray-200 rounded-lg p-2 min-h-[350px] bg-gray-50"
+              className={`border-2 border-beefive-green rounded-lg p-2 bg-white ${isMobile ? 'mb-4' : 'min-h-[350px]'}`}
             >
               {/* Day number */}
-              <div className="font-semibold text-gray-800 mb-2 text-center">{day}</div>
+              <div className="font-black text-beefive-green mb-2 text-center">{day}</div>
 
               {/* Members */}
               {membersToShow.map((member) => (
@@ -75,13 +77,14 @@ export function Calendar({
                   </div>
 
                   {/* Time slots grid */}
-                  <div className="grid grid-cols-3 gap-1">
+                  <div className={`grid gap-1 ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}`}>
                     {TIME_SLOTS.map((slot) => (
                       <TimeSlot
                         key={slot}
                         slot={slot}
                         isAvailable={getAvailabilityState(dateKey, member.name, slot)}
                         onClick={() => onToggleAvailability(dateKey, member.name, slot)}
+                        isMobile={isMobile}
                       />
                     ))}
                   </div>
@@ -89,18 +92,18 @@ export function Calendar({
               ))}
 
               {/* Legend */}
-              <div className="mt-3 pt-3 border-t border-gray-300">
-                <div className="text-[8px] font-semibold text-gray-600 mb-1 text-center">
+              <div className="mt-3 pt-3 border-t-2 border-beefive-green">
+                <div className="text-[8px] font-black text-beefive-green mb-1 text-center">
                   Referencias:
                 </div>
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded bg-green-100 border border-green-500"></div>
-                    <span className="text-[8px] text-gray-600">Verde = Disponible</span>
+                    <div className="w-3 h-3 rounded bg-green-100 border-2 border-green-500"></div>
+                    <span className="text-[8px] font-light text-gray-800">Verde = Disponible</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded bg-red-100 border border-red-500"></div>
-                    <span className="text-[8px] text-gray-600">Rojo = No Disponible</span>
+                    <div className="w-3 h-3 rounded bg-red-100 border-2 border-red-500"></div>
+                    <span className="text-[8px] font-light text-gray-800">Rojo = No Disponible</span>
                   </div>
                 </div>
               </div>

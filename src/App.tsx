@@ -3,8 +3,10 @@ import { MemberModal } from './components/MemberModal';
 import { PasswordModal } from './components/PasswordModal';
 import { ControlCards } from './components/ControlCards';
 import { Calendar } from './components/Calendar';
+import { DayView } from './components/DayView';
 import { useAuth } from './hooks/useAuth';
 import { useAvailability } from './hooks/useAvailability';
+import { useMobile } from './hooks/useMobile';
 import { TEAM_MEMBERS } from './utils/constants';
 
 function App() {
@@ -17,10 +19,12 @@ function App() {
     getAvailabilityState,
     saveAllChanges,
   } = useAvailability({ selectedMemberName: selectedMember?.name || null });
+  const isMobile = useMobile();
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [pendingMemberIndex, setPendingMemberIndex] = useState<number | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date(2026, 0, 1));
+  const [selectedDay, setSelectedDay] = useState(new Date(2026, 0, 1)); // For mobile day view
   const [viewAllMembers, setViewAllMembers] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -75,6 +79,22 @@ function App() {
     });
   };
 
+  const handlePreviousDay = () => {
+    setSelectedDay((prev) => {
+      const newDate = new Date(prev);
+      newDate.setDate(newDate.getDate() - 1);
+      return newDate;
+    });
+  };
+
+  const handleNextDay = () => {
+    setSelectedDay((prev) => {
+      const newDate = new Date(prev);
+      newDate.setDate(newDate.getDate() + 1);
+      return newDate;
+    });
+  };
+
   if (!isAuthenticated) {
     return (
       <>
@@ -96,35 +116,49 @@ function App() {
   const monthName = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][currentDate.getMonth()];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#faf9ff] to-[#f5f3ff] p-4 md:p-8">
-      {/* Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-2">
+    <div className="min-h-screen bg-black p-2 md:p-4 lg:p-8">
+      {/* Header with Beefive Branding */}
+      <div className="text-center mb-6 md:mb-8">
+        {/* Logo/Image */}
+        <div className="flex justify-center mb-4">
+          <img 
+            src="/ImageLandingBeefive.png" 
+            alt="Beefive Logo" 
+            className="h-12 md:h-16 lg:h-20 w-auto"
+          />
+        </div>
+        
+        {/* Title - Montserrat Black, color verde */}
+        <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-beefive-green mb-2 md:mb-3 tracking-tight">
           Dashboard de Disponibilidad
         </h1>
-        <p className="text-lg text-gray-600">
+        
+        {/* Subtitle - Montserrat Regular, color naranja */}
+        <p className="text-base md:text-xl lg:text-2xl font-normal text-beefive-orange">
           Beefive / Kioscoin - Reuniones y Agendamiento
         </p>
       </div>
 
-      {/* Month Selector */}
-      <div className="bg-white rounded-xl shadow-lg p-4 mb-6 flex items-center justify-between">
-        <button
-          onClick={() => handleChangeMonth(-1)}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-        >
-          ← Mes Anterior
-        </button>
-        <h2 className="text-2xl font-semibold text-gray-800">
-          {monthName} {currentDate.getFullYear()}
-        </h2>
-        <button
-          onClick={() => handleChangeMonth(1)}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-        >
-          Mes Siguiente →
-        </button>
-      </div>
+      {/* Month Selector - Only show on desktop or when in calendar view */}
+      {!isMobile && (
+        <div className="bg-white rounded-xl shadow-lg p-3 md:p-4 mb-4 md:mb-6 flex items-center justify-between">
+          <button
+            onClick={() => handleChangeMonth(-1)}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 md:px-6 py-2 rounded-lg font-medium transition-colors text-sm md:text-base"
+          >
+            ← Mes Anterior
+          </button>
+          <h2 className="text-lg md:text-2xl font-semibold text-gray-800">
+            {monthName} {currentDate.getFullYear()}
+          </h2>
+          <button
+            onClick={() => handleChangeMonth(1)}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 md:px-6 py-2 rounded-lg font-medium transition-colors text-sm md:text-base"
+          >
+            Mes Siguiente →
+          </button>
+        </div>
+      )}
 
       {/* Control Cards */}
       <ControlCards
@@ -150,32 +184,48 @@ function App() {
         </div>
       )}
 
-      {/* Calendar */}
-      <Calendar
-        currentDate={currentDate}
-        selectedMember={selectedMember}
-        viewAllMembers={viewAllMembers}
-        getAvailabilityState={getAvailabilityState}
-        onToggleAvailability={toggleAvailability}
-      />
+      {/* Calendar or Day View */}
+      {isMobile ? (
+        <DayView
+          date={selectedDay}
+          selectedMember={selectedMember}
+          viewAllMembers={viewAllMembers}
+          getAvailabilityState={getAvailabilityState}
+          onToggleAvailability={toggleAvailability}
+          onPreviousDay={handlePreviousDay}
+          onNextDay={handleNextDay}
+          isMobile={isMobile}
+        />
+      ) : (
+        <Calendar
+          currentDate={currentDate}
+          selectedMember={selectedMember}
+          viewAllMembers={viewAllMembers}
+          getAvailabilityState={getAvailabilityState}
+          onToggleAvailability={toggleAvailability}
+          isMobile={isMobile}
+        />
+      )}
 
-      {/* Legend */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">
-          Referencias de colores:
-        </h3>
-        <div className="flex flex-wrap gap-6 items-center">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-green-100 border-2 border-green-500"></div>
-            <span className="text-gray-700">Verde - Disponible</span>
+      {/* Legend - Only show on desktop (mobile has it in DayView) */}
+      {!isMobile && (
+        <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 border-2 border-beefive-green">
+          <h3 className="text-lg md:text-xl font-black text-beefive-green mb-4">
+            Referencias de colores:
+          </h3>
+          <div className="flex flex-wrap gap-4 md:gap-6 items-center">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded bg-green-100 border-2 border-green-500"></div>
+              <span className="text-sm md:text-base font-light text-gray-800">Verde - Disponible</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded bg-red-100 border-2 border-red-500"></div>
+              <span className="text-sm md:text-base font-light text-gray-800">Rojo - No Disponible</span>
+            </div>
+            <div className="text-xs md:text-sm font-light text-gray-600 italic">Click para cambiar</div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-red-100 border-2 border-red-500"></div>
-            <span className="text-gray-700">Rojo - No Disponible</span>
-          </div>
-          <div className="text-sm text-gray-500 italic">Click para cambiar</div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
