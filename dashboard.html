@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard de Disponibilidad - Beefive / Kioscoin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Montserrat", sans-serif;
+        background: linear-gradient(to bottom, #faf9ff, #f5f3ff);
+        min-height: 100vh;
+      }
+    </style>
+  </head>
+  <body class="p-4 md:p-8">
+    <!-- Member Selection Modal -->
+    <div
+      id="memberModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"
+    >
+      <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">
+          Elegí qué miembro del equipo eres
+        </h2>
+        <div class="grid grid-cols-2 gap-4">
+          <button
+            onclick="selectMember(0)"
+            class="member-card flex flex-col items-center justify-center p-6 rounded-xl border-2 border-transparent hover:border-purple-500 transition-all cursor-pointer bg-white shadow-md hover:shadow-lg"
+          >
+            <div
+              class="w-16 h-16 rounded-full bg-purple-500 flex items-center justify-center text-white text-2xl font-bold mb-2"
+            >
+              A
+            </div>
+            <span class="text-gray-700 font-medium">Alvaro</span>
+          </button>
+          <button
+            onclick="selectMember(1)"
+            class="member-card flex flex-col items-center justify-center p-6 rounded-xl border-2 border-transparent hover:border-yellow-500 transition-all cursor-pointer bg-white shadow-md hover:shadow-lg"
+          >
+            <div
+              class="w-16 h-16 rounded-full bg-yellow-400 flex items-center justify-center text-white text-2xl font-bold mb-2"
+            >
+              P
+            </div>
+            <span class="text-gray-700 font-medium">Pablo</span>
+          </button>
+          <button
+            onclick="selectMember(2)"
+            class="member-card flex flex-col items-center justify-center p-6 rounded-xl border-2 border-transparent hover:border-green-500 transition-all cursor-pointer bg-white shadow-md hover:shadow-lg"
+          >
+            <div
+              class="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center text-white text-2xl font-bold mb-2"
+            >
+              D
+            </div>
+            <span class="text-gray-700 font-medium">Diego</span>
+          </button>
+          <button
+            onclick="selectMember(3)"
+            class="member-card flex flex-col items-center justify-center p-6 rounded-xl border-2 border-transparent hover:border-blue-500 transition-all cursor-pointer bg-white shadow-md hover:shadow-lg"
+          >
+            <div
+              class="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center text-white text-2xl font-bold mb-2"
+            >
+              B
+            </div>
+            <span class="text-gray-700 font-medium">Bruno</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div
+      id="passwordModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"
+    >
+      <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-2 text-center">
+          Ingresá tu contraseña
+        </h2>
+        <p
+          class="text-sm text-gray-600 mb-6 text-center"
+          id="passwordMemberName"
+        >
+          Para <span id="passwordMemberNameSpan" class="font-semibold"></span>
+        </p>
+        <div class="mb-4">
+          <input
+            type="password"
+            id="passwordInput"
+            placeholder="Contraseña"
+            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none text-center text-2xl tracking-widest"
+            onkeypress="handlePasswordEnter(event)"
+            autofocus
+          />
+          <p
+            id="passwordError"
+            class="text-red-600 text-sm mt-2 text-center hidden"
+          >
+            Contraseña incorrecta
+          </p>
+        </div>
+        <div class="flex gap-3">
+          <button
+            onclick="cancelPassword()"
+            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-3 rounded-lg font-medium transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onclick="verifyPassword()"
+            class="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
+          >
+            Ingresar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="hidden">
+      <!-- Header -->
+      <div class="text-center mb-8">
+        <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-2">
+          Dashboard de Disponibilidad
+        </h1>
+        <p class="text-lg text-gray-600">
+          Beefive / Kioscoin - Reuniones y Agendamiento
+        </p>
+      </div>
+
+      <!-- Month Selector -->
+      <div
+        class="bg-white rounded-xl shadow-lg p-4 mb-6 flex items-center justify-between"
+      >
+        <button
+          onclick="changeMonth(-1)"
+          class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+        >
+          ← Mes Anterior
+        </button>
+        <h2 id="monthYear" class="text-2xl font-semibold text-gray-800"></h2>
+        <button
+          onclick="changeMonth(1)"
+          class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+        >
+          Mes Siguiente →
+        </button>
+      </div>
+
+      <!-- Control Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <!-- Card: Visualización -->
+        <div class="bg-white rounded-xl shadow-lg p-5 border border-gray-100">
+          <div class="flex items-center gap-2 mb-4">
+            <svg
+              class="w-5 h-5 text-purple-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              ></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+              ></path>
+            </svg>
+            <h3
+              class="text-sm font-semibold text-gray-700 uppercase tracking-wide"
+            >
+              Visualización
+            </h3>
+          </div>
+          <div class="space-y-3">
+            <div class="flex items-center gap-2">
+              <span id="viewStatus" class="text-sm text-gray-600 flex-1"></span>
+            </div>
+            <div class="flex gap-2">
+              <button
+                onclick="toggleViewMode()"
+                id="viewToggleBtn"
+                class="flex-1 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-800 px-4 py-2.5 rounded-lg font-medium transition-all shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+              >
+                Ver Todos
+              </button>
+              <button
+                onclick="resetSelection()"
+                class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2.5 rounded-lg font-medium transition-all border border-gray-200"
+              >
+                Cambiar Usuario
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card: Actualiza tu disponibilidad -->
+        <div class="bg-white rounded-xl shadow-lg p-5 border border-gray-100">
+          <div class="flex items-center gap-2 mb-4">
+            <svg
+              class="w-5 h-5 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+            <h3
+              class="text-sm font-semibold text-gray-700 uppercase tracking-wide"
+            >
+              Actualiza tu disponibilidad
+            </h3>
+          </div>
+          <div class="space-y-3">
+            <button
+              onclick="saveAllChanges()"
+              id="updateBtn"
+              class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-sm"
+              disabled
+            >
+              <span id="updateBtnText">UPDATE</span>
+            </button>
+            <div class="flex items-center justify-between text-xs">
+              <span
+                id="pendingChanges"
+                class="text-orange-600 font-medium hidden flex items-center gap-1"
+              >
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+                <span id="pendingChangesText"></span>
+              </span>
+              <span id="lastUpdated" class="text-gray-500 italic"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Calendar Grid -->
+      <div class="bg-white rounded-xl shadow-lg p-4 mb-6 overflow-x-auto">
+        <div id="calendarGrid" class="grid grid-cols-7 gap-2 min-w-max">
+          <!-- Calendar will be generated here -->
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="bg-white rounded-xl shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-800 mb-4">
+          Referencias de colores:
+        </h3>
+        <div class="flex flex-wrap gap-6 items-center">
+          <div class="flex items-center gap-2">
+            <div
+              class="w-6 h-6 rounded bg-green-100 border-2 border-green-500"
+            ></div>
+            <span class="text-gray-700">Verde - Disponible</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div
+              class="w-6 h-6 rounded bg-red-100 border-2 border-red-500"
+            ></div>
+            <span class="text-gray-700">Rojo - No Disponible</span>
+          </div>
+          <div class="text-sm text-gray-500 italic">Click para cambiar</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // API Configuration - Detecta automáticamente si está en producción
+      const API_URL =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1"
+          ? "http://localhost:3000"
+          : window.location.origin; // Usa la misma URL del servidor en producción
+
+      // Team members configuration
+      const teamMembers = [
+        { name: "Alvaro", initial: "A", color: "#8b5fdc", password: "1" },
+        { name: "Pablo", initial: "P", color: "#efb810", password: "2" },
+        { name: "Diego", initial: "D", color: "#10b981", password: "4" },
+        { name: "Bruno", initial: "B", color: "#3b82f6", password: "3" },
+      ];
+
+      // Estado de autenticación
+      let pendingMemberIndex = null; // Miembro seleccionado esperando contraseña
+
+      // Time slots: 24 bloques (0-23)
+      const timeSlots = [];
+      for (let hour = 0; hour < 24; hour++) {
+        const nextHour = hour === 23 ? 0 : hour + 1;
+        timeSlots.push(`${hour}-${nextHour}`);
+      }
+
+      // State
+      let currentDate = new Date(2026, 0, 1); // Empezar en 1 de enero 2026
+      let selectedPerson = null;
+      let viewAllMembers = false;
+      let availabilityData = {};
+      let isLoadingAvailability = false; // Guard para evitar requests simultáneos
+      let pendingChanges = new Map(); // Almacena cambios pendientes: "date|member|slot" -> boolean
+      let lastUpdated = null; // Última fecha de actualización
+
+      // Load availability from API
+      async function loadAvailabilityFromAPI() {
+        // Evitar múltiples requests simultáneos
+        if (isLoadingAvailability) {
+          return;
+        }
+
+        isLoadingAvailability = true;
+        try {
+          const response = await fetch(`${API_URL}/api/availability`);
+          if (response.ok) {
+            availabilityData = await response.json();
+          } else {
+            console.error("Failed to load availability");
+            availabilityData = {};
+          }
+        } catch (error) {
+          console.error("Error loading availability:", error);
+          availabilityData = {};
+        } finally {
+          isLoadingAvailability = false;
+        }
+      }
+
+      // Initialize
+      async function init() {
+        try {
+          // Load availability data from API
+          await loadAvailabilityFromAPI();
+
+          // Cargar last updated desde localStorage
+          const storedLastUpdated = localStorage.getItem("last-updated");
+          if (storedLastUpdated) {
+            lastUpdated = new Date(storedLastUpdated);
+            updateLastUpdatedUI();
+          }
+
+          // Check for authenticated member
+          const authenticated = localStorage.getItem("authenticated");
+          const storedPerson = localStorage.getItem("selected-person");
+
+          if (
+            authenticated === "true" &&
+            storedPerson !== null &&
+            storedPerson !== undefined &&
+            storedPerson !== ""
+          ) {
+            const personIndex = parseInt(storedPerson);
+            if (
+              !isNaN(personIndex) &&
+              personIndex >= 0 &&
+              personIndex < teamMembers.length
+            ) {
+              selectedPerson = personIndex;
+              showDashboard();
+            } else {
+              // Datos inválidos, limpiar y mostrar modal
+              localStorage.removeItem("selected-person");
+              localStorage.removeItem("authenticated");
+              showMemberModal();
+            }
+          } else {
+            // No autenticado, mostrar modal
+            showMemberModal();
+          }
+        } catch (error) {
+          console.error("Error during initialization:", error);
+          showMemberModal();
+        }
+      }
+
+      function showMemberModal() {
+        document.getElementById("memberModal").classList.remove("hidden");
+        document.getElementById("passwordModal").classList.add("hidden");
+        document.getElementById("dashboard").classList.add("hidden");
+      }
+
+      function showPasswordModal(memberIndex) {
+        pendingMemberIndex = memberIndex;
+        const member = teamMembers[memberIndex];
+        document.getElementById("passwordMemberNameSpan").textContent =
+          member.name;
+        document.getElementById("passwordMemberNameSpan").style.color =
+          member.color;
+        document.getElementById("passwordInput").value = "";
+        document.getElementById("passwordError").classList.add("hidden");
+        document.getElementById("memberModal").classList.add("hidden");
+        document.getElementById("passwordModal").classList.remove("hidden");
+        // Focus en el input
+        setTimeout(() => {
+          document.getElementById("passwordInput").focus();
+        }, 100);
+      }
+
+      function cancelPassword() {
+        pendingMemberIndex = null;
+        document.getElementById("passwordModal").classList.add("hidden");
+        showMemberModal();
+      }
+
+      function handlePasswordEnter(event) {
+        if (event.key === "Enter") {
+          verifyPassword();
+        }
+      }
+
+      function verifyPassword() {
+        const passwordInput = document.getElementById("passwordInput");
+        const password = passwordInput.value;
+        const errorEl = document.getElementById("passwordError");
+
+        if (pendingMemberIndex === null) {
+          return;
+        }
+
+        const member = teamMembers[pendingMemberIndex];
+
+        if (password === member.password) {
+          // Contraseña correcta
+          selectedPerson = pendingMemberIndex;
+          localStorage.setItem(
+            "selected-person",
+            pendingMemberIndex.toString()
+          );
+          localStorage.setItem("authenticated", "true");
+          pendingMemberIndex = null;
+          document.getElementById("passwordModal").classList.add("hidden");
+          showDashboard();
+        } else {
+          // Contraseña incorrecta
+          errorEl.classList.remove("hidden");
+          passwordInput.value = "";
+          passwordInput.focus();
+        }
+      }
+
+      function showDashboard() {
+        document.getElementById("memberModal").classList.add("hidden");
+        document.getElementById("passwordModal").classList.add("hidden");
+        document.getElementById("dashboard").classList.remove("hidden");
+        updateViewStatus();
+        renderCalendar();
+      }
+
+      function selectMember(index) {
+        // Verificar si ya está autenticado como otro usuario
+        const authenticated = localStorage.getItem("authenticated");
+        const storedPerson = localStorage.getItem("selected-person");
+
+        if (authenticated === "true" && storedPerson !== null) {
+          // Ya está autenticado, no permitir cambiar
+          return;
+        }
+
+        // Mostrar modal de contraseña
+        showPasswordModal(index);
+      }
+
+      function formatDateKey(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+
+      function getMonthName(month) {
+        const months = [
+          "Enero",
+          "Febrero",
+          "Marzo",
+          "Abril",
+          "Mayo",
+          "Junio",
+          "Julio",
+          "Agosto",
+          "Septiembre",
+          "Octubre",
+          "Noviembre",
+          "Diciembre",
+        ];
+        return months[month];
+      }
+
+      function getDayName(day) {
+        const days = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+        return days[day];
+      }
+
+      async function changeMonth(direction) {
+        currentDate.setMonth(currentDate.getMonth() + direction);
+        await loadAvailabilityFromAPI();
+        renderCalendar();
+      }
+
+      function renderCalendar() {
+        // Don't render if no member is selected
+        if (selectedPerson === null || selectedPerson === undefined) {
+          return;
+        }
+
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+
+        // Update month/year display
+        const monthYearEl = document.getElementById("monthYear");
+        if (monthYearEl) {
+          monthYearEl.textContent = `${getMonthName(month)} ${year}`;
+        }
+
+        // Get first day of month and number of days
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        const startingDayOfWeek = firstDay.getDay();
+
+        // Clear calendar
+        const grid = document.getElementById("calendarGrid");
+        if (!grid) {
+          return;
+        }
+        grid.innerHTML = "";
+
+        // Add day headers
+        const dayHeaders = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+        dayHeaders.forEach((day) => {
+          const header = document.createElement("div");
+          header.className = "font-semibold text-gray-700 text-center py-2";
+          header.textContent = day;
+          grid.appendChild(header);
+        });
+
+        // Add empty cells for days before month starts
+        for (let i = 0; i < startingDayOfWeek; i++) {
+          const emptyCell = document.createElement("div");
+          emptyCell.className = "min-h-[350px]";
+          grid.appendChild(emptyCell);
+        }
+
+        // Add day cells
+        for (let day = 1; day <= daysInMonth; day++) {
+          const date = new Date(year, month, day);
+          const dateKey = formatDateKey(date);
+          const cell = createDayCell(date, dateKey, day);
+          grid.appendChild(cell);
+        }
+      }
+
+      function createDayCell(date, dateKey, dayNumber) {
+        const cell = document.createElement("div");
+        cell.className =
+          "border border-gray-200 rounded-lg p-2 min-h-[350px] bg-gray-50";
+
+        // Day number header
+        const dayHeader = document.createElement("div");
+        dayHeader.className = "font-semibold text-gray-800 mb-2 text-center";
+        dayHeader.textContent = dayNumber;
+        cell.appendChild(dayHeader);
+
+        // Check if selectedPerson is valid
+        if (selectedPerson === null || selectedPerson === undefined) {
+          return cell;
+        }
+
+        // Determine which members to show
+        const membersToShow = viewAllMembers
+          ? teamMembers
+          : [teamMembers[selectedPerson]];
+
+        membersToShow.forEach((member) => {
+          const memberSection = document.createElement("div");
+          memberSection.className = "mb-3";
+
+          // Member name label
+          const memberLabel = document.createElement("div");
+          memberLabel.className = "text-xs font-medium mb-1";
+          memberLabel.style.color = member.color;
+          memberLabel.textContent = member.name;
+          memberSection.appendChild(memberLabel);
+
+          // Time slots grid
+          const slotsGrid = document.createElement("div");
+          slotsGrid.className = "grid grid-cols-3 gap-1";
+
+          timeSlots.forEach((slot) => {
+            const slotBtn = document.createElement("button");
+            slotBtn.className =
+              "text-[9px] px-1 py-1 rounded border-2 transition-all hover:scale-105 hover:shadow-md cursor-pointer";
+
+            // Get availability state
+            const isAvailable = getAvailability(dateKey, member.name, slot);
+            updateSlotStyle(slotBtn, isAvailable);
+
+            // Format time slot: "0-1" -> "0-1", "23-0" -> "23-0"
+            slotBtn.textContent = slot;
+            slotBtn.type = "button"; // Evitar submit si está dentro de un form
+            slotBtn.addEventListener("click", (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleAvailability(dateKey, member.name, slot, slotBtn);
+            });
+
+            slotsGrid.appendChild(slotBtn);
+          });
+
+          memberSection.appendChild(slotsGrid);
+          cell.appendChild(memberSection);
+        });
+
+        // Add color legend below time slots for each day
+        const legendContainer = document.createElement("div");
+        legendContainer.className = "mt-3 pt-3 border-t border-gray-300";
+
+        const legendTitle = document.createElement("div");
+        legendTitle.className =
+          "text-[8px] font-semibold text-gray-600 mb-1 text-center";
+        legendTitle.textContent = "Referencias:";
+        legendContainer.appendChild(legendTitle);
+
+        const legendItems = document.createElement("div");
+        legendItems.className = "flex flex-col gap-1";
+
+        // Verde - Disponible
+        const greenLegend = document.createElement("div");
+        greenLegend.className = "flex items-center gap-1";
+        const greenBox = document.createElement("div");
+        greenBox.className =
+          "w-3 h-3 rounded bg-green-100 border border-green-500";
+        const greenText = document.createElement("span");
+        greenText.className = "text-[8px] text-gray-600";
+        greenText.textContent = "Verde = Disponible";
+        greenLegend.appendChild(greenBox);
+        greenLegend.appendChild(greenText);
+        legendItems.appendChild(greenLegend);
+
+        // Rojo - No Disponible
+        const redLegend = document.createElement("div");
+        redLegend.className = "flex items-center gap-1";
+        const redBox = document.createElement("div");
+        redBox.className = "w-3 h-3 rounded bg-red-100 border border-red-500";
+        const redText = document.createElement("span");
+        redText.className = "text-[8px] text-gray-600";
+        redText.textContent = "Rojo = No Disponible";
+        redLegend.appendChild(redBox);
+        redLegend.appendChild(redText);
+        legendItems.appendChild(redLegend);
+
+        legendContainer.appendChild(legendItems);
+        cell.appendChild(legendContainer);
+
+        return cell;
+      }
+
+      function getAvailability(dateKey, memberName, slot) {
+        // Primero verificar si hay un cambio pendiente
+        const changeKey = `${dateKey}|${memberName}|${slot}`;
+        if (pendingChanges.has(changeKey)) {
+          return pendingChanges.get(changeKey);
+        }
+
+        // Si no hay cambio pendiente, usar datos guardados
+        if (!availabilityData[dateKey]) {
+          return false; // Default to not available (rojo)
+        }
+        if (!availabilityData[dateKey][memberName]) {
+          return false;
+        }
+        return availabilityData[dateKey][memberName][slot] === true; // Default to false if undefined
+      }
+
+      function updateSlotStyle(button, isAvailable) {
+        if (isAvailable) {
+          button.className =
+            "text-[9px] px-1 py-1 rounded border-2 transition-all hover:scale-105 hover:shadow-md cursor-pointer bg-green-50 border-green-500 text-green-700";
+        } else {
+          button.className =
+            "text-[9px] px-1 py-1 rounded border-2 transition-all hover:scale-105 hover:shadow-md cursor-pointer bg-red-50 border-red-500 text-red-700";
+        }
+      }
+
+      function toggleAvailability(dateKey, memberName, slot, button) {
+        // Initialize if needed
+        if (!availabilityData[dateKey]) {
+          availabilityData[dateKey] = {};
+        }
+        if (!availabilityData[dateKey][memberName]) {
+          availabilityData[dateKey][memberName] = {};
+        }
+
+        // Toggle availability (solo local, sin guardar aún)
+        const currentState = getAvailability(dateKey, memberName, slot);
+        const newState = !currentState;
+        availabilityData[dateKey][memberName][slot] = newState;
+
+        // Guardar cambio pendiente
+        const changeKey = `${dateKey}|${memberName}|${slot}`;
+        pendingChanges.set(changeKey, newState);
+
+        // Update UI immediately
+        updateSlotStyle(button, newState);
+
+        // Actualizar contador de cambios pendientes y habilitar botón UPDATE
+        updatePendingChangesUI();
+      }
+
+      function updatePendingChangesUI() {
+        const updateBtn = document.getElementById("updateBtn");
+        const updateBtnText = document.getElementById("updateBtnText");
+        const pendingEl = document.getElementById("pendingChanges");
+        const pendingText = document.getElementById("pendingChangesText");
+        const count = pendingChanges.size;
+
+        if (count > 0) {
+          updateBtn.disabled = false;
+          if (pendingEl && pendingText) {
+            pendingText.textContent = `${count} cambio${
+              count > 1 ? "s" : ""
+            } pendiente${count > 1 ? "s" : ""}`;
+            pendingEl.classList.remove("hidden");
+          }
+          if (updateBtnText) {
+            updateBtnText.textContent = `UPDATE (${count})`;
+          }
+        } else {
+          updateBtn.disabled = true;
+          if (pendingEl) {
+            pendingEl.classList.add("hidden");
+          }
+          if (updateBtnText) {
+            updateBtnText.textContent = "UPDATE";
+          }
+        }
+      }
+
+      async function saveAllChanges() {
+        if (pendingChanges.size === 0) return;
+
+        const updateBtn = document.getElementById("updateBtn");
+        const updateBtnText = document.getElementById("updateBtnText");
+        updateBtn.disabled = true;
+        if (updateBtnText) {
+          updateBtnText.textContent = "Guardando...";
+        }
+
+        const changes = Array.from(pendingChanges.entries()).map(
+          ([key, available]) => {
+            const [date, member, slot] = key.split("|");
+            return { date, member, slot, available };
+          }
+        );
+
+        try {
+          const response = await fetch(`${API_URL}/api/availability/batch`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ changes }),
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            // Limpiar cambios pendientes
+            pendingChanges.clear();
+            updatePendingChangesUI();
+
+            // Actualizar last updated
+            lastUpdated = new Date();
+            localStorage.setItem("last-updated", lastUpdated.toISOString());
+            updateLastUpdatedUI();
+
+            if (updateBtnText) {
+              updateBtnText.textContent = "UPDATE";
+            }
+            updateBtn.disabled = false;
+
+            // Mostrar mensaje de éxito
+            showSaveStatus(
+              result.message || `${changes.length} cambios guardados`
+            );
+          } else {
+            console.error("Failed to save changes");
+            if (updateBtnText) {
+              updateBtnText.textContent = "UPDATE";
+            }
+            updateBtn.disabled = false;
+            showSaveStatus("Error al guardar", true);
+          }
+        } catch (error) {
+          console.error("Error saving changes:", error);
+          if (updateBtnText) {
+            updateBtnText.textContent = "UPDATE";
+          }
+          updateBtn.disabled = false;
+          showSaveStatus("Error de conexión", true);
+        }
+      }
+
+      function updateLastUpdatedUI() {
+        const lastUpdatedEl = document.getElementById("lastUpdated");
+        if (!lastUpdatedEl) return;
+
+        if (lastUpdated) {
+          const date = new Date(lastUpdated);
+          const dateStr = date.toLocaleDateString("es-ES", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          });
+          const timeStr = date.toLocaleTimeString("es-ES", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+          lastUpdatedEl.textContent = `Actualizado: ${dateStr} ${timeStr}`;
+        } else {
+          lastUpdatedEl.textContent = "Sin actualizaciones";
+        }
+      }
+
+      function toggleViewMode() {
+        viewAllMembers = !viewAllMembers;
+        updateViewStatus();
+        renderCalendar();
+      }
+
+      function resetSelection() {
+        // Limpiar sesión
+        localStorage.removeItem("selected-person");
+        localStorage.removeItem("authenticated");
+        selectedPerson = null;
+        viewAllMembers = false;
+        pendingChanges.clear();
+        updatePendingChangesUI();
+        showMemberModal();
+      }
+
+      function updateViewStatus() {
+        const statusEl = document.getElementById("viewStatus");
+        const btnEl = document.getElementById("viewToggleBtn");
+
+        if (selectedPerson === null || selectedPerson === undefined) {
+          if (statusEl) statusEl.textContent = "";
+          if (btnEl) btnEl.textContent = "Ver Todos";
+          return;
+        }
+
+        if (viewAllMembers) {
+          if (statusEl)
+            statusEl.textContent = "Vista actual: Todos los miembros";
+          if (btnEl)
+            btnEl.textContent = `Ver Solo ${teamMembers[selectedPerson].name}`;
+        } else {
+          if (statusEl)
+            statusEl.textContent = `Vista actual: ${teamMembers[selectedPerson].name}`;
+          if (btnEl) btnEl.textContent = "Ver Todos";
+        }
+      }
+
+      function showSaveStatus(message, isError = false) {
+        const statusEl = document.getElementById("saveStatus");
+        if (!statusEl) return;
+
+        statusEl.textContent = message;
+        statusEl.classList.remove("hidden");
+
+        if (isError) {
+          statusEl.className = "text-sm text-red-600 font-medium";
+        } else {
+          statusEl.className = "text-sm text-green-600 font-medium";
+        }
+
+        // Ocultar después de 3 segundos
+        setTimeout(() => {
+          statusEl.classList.add("hidden");
+        }, 3000);
+      }
+
+      // Initialize on load
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
+      } else {
+        // DOM is already loaded
+        init();
+      }
+    </script>
+  </body>
+</html>
