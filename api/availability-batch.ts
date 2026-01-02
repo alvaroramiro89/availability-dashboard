@@ -1,11 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Octokit } from '@octokit/rest';
 
-const GIST_ID = process.env.GIST_ID;
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const GIST_FILENAME = 'availability.json';
-
-const octokit = new Octokit({ auth: GITHUB_TOKEN });
 
 interface Change {
   date: string;
@@ -26,11 +22,27 @@ export default async function handler(
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
+  const GIST_ID = process.env.GIST_ID;
+  const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+
   if (!GIST_ID || !GITHUB_TOKEN) {
+    console.error('Missing environment variables:', { 
+      hasGistId: !!GIST_ID, 
+      hasToken: !!GITHUB_TOKEN 
+    });
     return res.status(500).json({ 
-      error: 'Server configuration error: GIST_ID or GITHUB_TOKEN not set.' 
+      error: 'Server configuration error: GIST_ID or GITHUB_TOKEN not set.',
+      details: {
+        hasGistId: !!GIST_ID,
+        hasToken: !!GITHUB_TOKEN
+      }
     });
   }
+
+  // Limpiar GIST_ID (por si viene con URL completa)
+  const cleanGistId = GIST_ID.split('/').pop()?.split('?')[0] || GIST_ID;
+
+  const octokit = new Octokit({ auth: GITHUB_TOKEN });
 
   const { changes } = req.body as RequestBody;
 
@@ -49,8 +61,9 @@ export default async function handler(
   }
 
   try {
+    console.log('Fetching gist for update:', cleanGistId);
     // Leer Gist actual
-    const gist = await octokit.gists.get({ gist_id: GIST_ID });
+    const gist = await octokit.gists.get({ gist_id: cleanGistId });
     let availabilityData: Record<string, Record<string, Record<string, boolean>>> = {};
 
     if (gist.data.files && gist.data.files[GIST_FILENAME]) {
@@ -93,14 +106,16 @@ export default async function handler(
 
     // Guardar en Gist
     if (updatedCount > 0) {
+      console.log(`Saving ${updatedCount} changes to gist`);
       await octokit.gists.update({
-        gist_id: GIST_ID,
+        gist_id: cleanGistId,
         files: {
           [GIST_FILENAME]: {
             content: JSON.stringify(availabilityData, null, 2),
           },
         },
       });
+      console.log('Gist updated successfully');
     }
 
     res.json({
@@ -108,10 +123,16 @@ export default async function handler(
       message: `${updatedCount} cambio${updatedCount !== 1 ? 's' : ''} actualizado${updatedCount !== 1 ? 's' : ''} correctamente`,
       updatedCount,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error saving availability batch:', error);
+    console.error('Error details:', {
+      message: error?.message,
+      status: error?.status,
+      response: error?.response?.data
+    });
     res.status(500).json({ 
-      error: 'Failed to save availability changes.' 
+      error: 'Failed to save availability changes.',
+      details: error?.message || 'Unknown error'
     });
   }
 }

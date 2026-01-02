@@ -1,11 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Octokit } from '@octokit/rest';
 
-const GIST_ID = process.env.GIST_ID;
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const GIST_FILENAME = 'availability.json';
-
-const octokit = new Octokit({ auth: GITHUB_TOKEN });
 
 // Generar todos los días del 2026
 function getAll2026Dates() {
@@ -33,15 +29,32 @@ export default async function handler(
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
+  const GIST_ID = process.env.GIST_ID;
+  const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+
   if (!GIST_ID || !GITHUB_TOKEN) {
+    console.error('Missing environment variables:', { 
+      hasGistId: !!GIST_ID, 
+      hasToken: !!GITHUB_TOKEN 
+    });
     return res.status(500).json({ 
-      error: 'Server configuration error: GIST_ID or GITHUB_TOKEN not set.' 
+      error: 'Server configuration error: GIST_ID or GITHUB_TOKEN not set.',
+      details: {
+        hasGistId: !!GIST_ID,
+        hasToken: !!GITHUB_TOKEN
+      }
     });
   }
 
+  // Limpiar GIST_ID (por si viene con URL completa)
+  const cleanGistId = GIST_ID.split('/').pop()?.split('?')[0] || GIST_ID;
+
+  const octokit = new Octokit({ auth: GITHUB_TOKEN });
+
   try {
+    console.log('Fetching gist:', cleanGistId);
     // Leer Gist
-    const gist = await octokit.gists.get({ gist_id: GIST_ID });
+    const gist = await octokit.gists.get({ gist_id: cleanGistId });
     let availabilityData: Record<string, Record<string, Record<string, boolean>>> = {};
 
     if (gist.data.files && gist.data.files[GIST_FILENAME]) {
@@ -82,21 +95,29 @@ export default async function handler(
 
     // Si hubo cambios, actualizar Gist
     if (hasChanges) {
+      console.log('Updating gist with initialized data');
       await octokit.gists.update({
-        gist_id: GIST_ID,
+        gist_id: cleanGistId,
         files: {
           [GIST_FILENAME]: {
             content: JSON.stringify(availabilityData, null, 2),
           },
         },
       });
+      console.log('Gist updated successfully');
     }
 
     res.json(availabilityData);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching/initializing availability:', error);
+    console.error('Error details:', {
+      message: error?.message,
+      status: error?.status,
+      response: error?.response?.data
+    });
     res.status(500).json({ 
-      error: 'Failed to fetch or initialize availability data.' 
+      error: 'Failed to fetch or initialize availability data.',
+      details: error?.message || 'Unknown error'
     });
   }
 }
