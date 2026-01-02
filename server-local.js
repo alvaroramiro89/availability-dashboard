@@ -95,8 +95,8 @@ app.get('/api/availability', (req, res) => {
   res.json(result);
 });
 
-// POST /api/availability/batch
-app.post('/api/availability/batch', (req, res) => {
+// POST /api/availability-batch
+app.post('/api/availability-batch', (req, res) => {
   const { changes } = req.body;
   
   if (!Array.isArray(changes) || changes.length === 0) {
